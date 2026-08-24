@@ -1,0 +1,25 @@
+{
+  "name": "NSQF Planner",
+  "short_name": "Planner",
+  "description": "NSQF Session Plan & WPR Planner – Samagra Shiksha",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F4F2ED",
+  "theme_color": "#0F2440",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "Icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "Icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
