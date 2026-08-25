@@ -1,49 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>NSQF Planner – Samagra Shiksha Assam</title>
+    <meta charset="utf-8">
+    <title>NSQF Planner – Samagra Shiksha Assam</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0F2440">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F2440">
 
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="NSQF Planner">
-  <link rel="apple-touch-icon" href="Icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NSQF Planner">
+    <link rel="apple-touch-icon" href="Icon.png">
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background: #F4F2ED;
-    }
-    iframe {
-      border: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-  </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: #f8f7f4;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #appFrame {
+            border: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background: #ffffff;
+        }
+
+        /* ========== LOADING OVERLAY ========== */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            z-index: 9999;
+            background: linear-gradient(160deg, #faf9f7 0%, #f0ede8 50%, #f8f7f4 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, visibility;
+        }
+
+        #loadingOverlay.fade-out {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* --- modern dual-ring spinner --- */
+        .spinner-container {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            margin-bottom: 32px;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2.5px solid transparent;
+            animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+
+        .spinner-ring.outer {
+            border-top-color: #1a3d6d;
+            border-right-color: #1a3d6d;
+            border-bottom-color: transparent;
+            border-left-color: transparent;
+            animation-duration: 1.2s;
+        }
+
+        .spinner-ring.inner {
+            inset: 8px;
+            border-top-color: transparent;
+            border-right-color: transparent;
+            border-bottom-color: #b3c7e0;
+            border-left-color: #b3c7e0;
+            animation-duration: 0.8s;
+            animation-direction: reverse;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* --- modern typography --- */
+        .main-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a1f2e;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .sub-text {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: #8b91a0;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 0 20px;
+            min-height: 1.4em;
+            transition: color 0.3s ease;
+            margin-bottom: 18px;
+        }
+
+        /* --- modern progress bar --- */
+        .progress-wrapper {
+            width: min(300px, 72vw);
+            margin-top: 8px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 3px;
+            background-color: #e2e0db;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #1a3d6d, #4a7ab5);
+            border-radius: 10px;
+            transition: width 0.1s linear;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            filter: blur(1px);
+        }
+
+        .progress-percent {
+            text-align: right;
+            font-size: 0.7rem;
+            color: #a0a5b0;
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        /* --- retry button --- */
+        .retry-btn {
+            margin-top: 18px;
+            padding: 10px 28px;
+            background: transparent;
+            border: 1.5px solid #c5cbd8;
+            border-radius: 50px;
+            color: #1a3d6d;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+
+        .retry-btn.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .retry-btn:hover {
+            border-color: #1a3d6d;
+            background: rgba(26, 61, 109, 0.06);
+        }
+
+        .retry-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* --- subtle shimmer background accent --- */
+        .bg-accent {
+            position: absolute;
+            top: -30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(26, 61, 109, 0.06) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: translateX(-50%) scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translateX(-50%) scale(1.05);
+            }
+        }
+
+        /* --- fallback for very small screens --- */
+        @media (max-width: 480px) {
+            .spinner-container {
+                width: 52px;
+                height: 52px;
+                margin-bottom: 24px;
+            }
+            .main-text {
+                font-size: 1.05rem;
+            }
+            .sub-text {
+                font-size: 0.75rem;
+                letter-spacing: 1px;
+            }
+            .progress-wrapper {
+                width: min(240px, 78vw);
+            }
+        }
+
+        @media (max-width: 360px) {
+            .spinner-container {
+                width: 44px;
+                height: 44px;
+                margin-bottom: 18px;
+            }
+            .main-text {
+                font-size: 0.95rem;
+            }
+            .sub-text {
+                font-size: 0.7rem;
+                letter-spacing: 0.8px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- Replace with your actual Apps Script Web App URL -->
-  <iframe
-    id="appFrame"
-    src="https://script.google.com/macros/s/AKfycbyBl8CcF5AsPQk2Jb_WPGMTbhD9-5QlMA2YwVJCiRyeE6hvp6pOw2KayzBcPsJasDZIIQ/exec"
-    allow="clipboard-write"
-  ></iframe>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-      });
-    }
-  </script>
+    <!-- Loading overlay – modern & natural -->
+    <div id="loadingOverlay" aria-live="polite">
+        <div class="bg-accent"></div>
+
+        <div class="spinner-container">
+            <div class="spinner-ring outer"></div>
+            <div class="spinner-ring inner"></div>
+        </div>
+
+        <div class="main-text" id="mainText">Connecting with Server</div>
+        <div class="sub-text" id="subText">Please wait</div>
+
+        <div class="progress-wrapper">
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-percent" id="progressPercent">0%</div>
+        </div>
+
+        <button class="retry-btn" id="retryBtn">Retry Connection</button>
+    </div>
+
+    <!-- Main iframe -->
+    <iframe
+        id="appFrame"
+        src="https://script.google.com/macros/s/AKfycbyBl8CcF5AsPQk2Jb_WPGMTbhD9-5QlMA2YwVJCiRyeE6hvp6pOw2KayzBcPsJasDZIIQ/exec"
+        allow="clipboard-write; fullscreen; geolocation"
+        title="NSQF Planner Application"
+    ></iframe>
+
+    <script>
+        (function() {
+            // ---------- Configuration ----------
+            const MIN_LOADING_TIME = 2500;          // ms (minimum overlay display)
+            const MESSAGE_INTERVAL = 1200;          // ms between status changes
+            const IFRAME_TIMEOUT = 15000;           // ms before showing retry
+            const FADE_DURATION = 600;              // must match CSS transition
+
+            // Modern status message pairs
+            const STATUS_PAIRS = [
+                { main: 'Connecting with Server', sub: 'Please wait' },
+                { main: 'Initializing', sub: 'Setting up secure session' },
+                { main: 'Loading Dashboard', sub: 'Almost ready' },
+                { main: 'Verifying', sub: 'Checking connection' },
+            ];
+
+            // ---------- DOM Elements ----------
+            const overlay = document.getElementById('loadingOverlay');
+            const mainText = document.getElementById('mainText');
+            const subText = document.getElementById('subText');
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+            const retryBtn = document.getElementById('retryBtn');
+            const iframe = document.getElementById('appFrame');
+
+            // ---------- State ----------
+            let iframeLoaded = false;
+            let minTimeElapsed = false;
+            let accessGranted = false;
+            let statusIndex = 0;
+            let statusTimer = null;
+            let timeoutTimer = null;
+            let progressStart = Date.now();
+            let progressRAF = null;
+
+            // ---------- Progress updater ----------
+            function updateProgress() {
+                const elapsed = Date.now() - progressStart;
+                const raw = Math.min(elapsed / MIN_LOADING_TIME, 1);
+                const eased = 1 - Math.pow(1 - raw, 1.5); // slightly smoother ease
+                const percent = Math.min(Math.round(eased * 100), 100);
+
+                progressFill.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+
+                if (raw < 1 && !accessGranted) {
+                    progressRAF = requestAnimationFrame(updateProgress);
+                }
+            }
+            progressRAF = requestAnimationFrame(updateProgress);
+
+            // ---------- Status text updater ----------
+            function setStatus(main, sub) {
+                mainText.textContent = main;
+                subText.textContent = sub;
+            }
+
+            function cycleStatus() {
+                statusIndex = (statusIndex + 1) % STATUS_PAIRS.length;
+                setStatus(STATUS_PAIRS[statusIndex].main, STATUS_PAIRS[statusIndex].sub);
+            }
+
+            statusTimer = setInterval(cycleStatus, MESSAGE_INTERVAL);
+
+            // ---------- Minimum time tracker ----------
+            const minTimer = setTimeout(() => {
+                minTimeElapsed = true;
+                checkReady();
+            }, MIN_LOADING_TIME);
+
+            // ---------- Iframe load detection ----------
+            iframe.addEventListener('load', () => {
+                if (!iframeLoaded) {
+                    iframeLoaded = true;
+                    console.log('[NSQF] Iframe loaded.');
+                    checkReady();
+                }
+            });
+
+            // ---------- Timeout / retry ----------
+            function handleTimeout() {
+                if (!iframeLoaded && !accessGranted) {
+                    setStatus('Taking longer than expected', 'Please hold on');
+                    retryBtn.classList.add('visible');
+                    clearInterval(statusTimer);
+                }
+            }
+            timeoutTimer = setTimeout(handleTimeout, IFRAME_TIMEOUT);
+
+            retryBtn.addEventListener('click', () => {
+                retryBtn.classList.remove('visible');
+                setStatus('Reconnecting', 'Please wait');
+
+                // Reset state
+                iframeLoaded = false;
+                accessGranted = false;
+                minTimeElapsed = false;
+                progressStart = Date.now();
+                progressFill.style.width = '0%';
+                progressPercent.textContent = '0%';
+
+                // Restart status cycling
+                clearInterval(statusTimer);
+                statusIndex = 0;
+                setStatus(STATUS_PAIRS[0].main, STATUS_PAIRS[0].sub);
+                statusTimer = setInterval(cycleStatus, MESSAGE_INTERVAL);
+
+                // Restart progress animation
+                if (progressRAF) cancelAnimationFrame(progressRAF);
+                progressRAF = requestAnimationFrame(updateProgress);
+
+                // Reload iframe
+                const src = iframe.src;
+                iframe.src = 'about:blank';
+                setTimeout(() => {
+                    iframe.src = src;
+                }, 100);
+
+                // Reset minTimer
+                clearTimeout(minTimer);
+                setTimeout(() => {
+                    minTimeElapsed = true;
+                    checkReady();
+                }, MIN_LOADING_TIME);
+
+                // Reset timeout
+                clearTimeout(timeoutTimer);
+                timeoutTimer = setTimeout(handleTimeout, IFRAME_TIMEOUT);
+            });
+
+            // ---------- Ready check ----------
+            function checkReady() {
+                if (iframeLoaded && minTimeElapsed && !accessGranted) {
+                    accessGranted = true;
+                    console.log('[NSQF] Loading complete.');
+
+                    // Stop timers
+                    clearInterval(statusTimer);
+                    if (progressRAF) cancelAnimationFrame(progressRAF);
+
+                    // Fill progress to 100%
+                    progressFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    setStatus('Ready', 'Launching');
+
+                    // Fade out overlay
+                    setTimeout(() => {
+                        overlay.classList.add('fade-out');
+                        setTimeout(() => {
+                            overlay.style.display = 'none';
+                        }, FADE_DURATION);
+                    }, 250); // small pause for readability
+                }
+            }
+
+            // ---------- Service worker (preserved) ----------
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js').catch(() => {});
+                });
+            }
+
+            console.log('[NSQF] Modern loading overlay initialized.');
+        })();
+    </script>
 </body>
 </html>
