@@ -270,61 +270,58 @@
             }
         }
 
-        /* ========== NOTES HUB BUTTON + OVERLAY ========== */
+        /* ========== DOWNLOAD NOTES BUTTON (login screen only) ========== */
         #notesBtn {
             position: fixed;
-            bottom: 20px;
+            top: 20px;
             right: 20px;
-            z-index: 20;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: none;
-            background: #1a3d6d;
-            color: #fff;
-            font-size: 22px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
-            cursor: pointer;
-            display: flex;
+            z-index: 10000;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px 10px 14px;
+            border-radius: 50px;
+            border: 1px solid rgba(26, 61, 109, 0.18);
+            background: #ffffff;
+            color: #1a3d6d;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            box-shadow: 0 4px 16px rgba(15, 36, 64, 0.14);
+            cursor: pointer;
+            transition: opacity 0.4s ease, visibility 0.4s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        #notesBtn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        #notesBtn:hover {
+            box-shadow: 0 6px 20px rgba(15, 36, 64, 0.2);
+            transform: translateY(-1px);
         }
 
         #notesBtn:active {
-            transform: scale(0.94);
+            transform: translateY(0) scale(0.97);
         }
 
-        #notesOverlay {
-            position: fixed;
-            inset: 0;
-            z-index: 30;
-            display: none;
-            background: #fff;
+        /* Hidden once the app has finished loading (i.e. user is past the login screen) */
+        #notesBtn.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
 
-        #notesOverlay.open {
-            display: block;
-        }
-
-        #notesCloseBtn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 31;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(0, 0, 0, .6);
-            color: #fff;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        #notesFrame {
-            width: 100%;
-            height: 100%;
-            border: 0;
+        @media (max-width: 480px) {
+            #notesBtn {
+                top: 14px;
+                right: 14px;
+                padding: 9px 14px 9px 12px;
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
@@ -360,14 +357,15 @@
         title="NSQF Planner Application"
     ></iframe>
 
-    <!-- Notes Hub floating button -->
-    <button id="notesBtn" aria-label="Download Notes">📥</button>
-
-    <!-- Notes Hub overlay -->
-    <div id="notesOverlay">
-        <button id="notesCloseBtn" aria-label="Close Notes">✕</button>
-        <iframe id="notesFrame" src="" title="Notes Hub"></iframe>
-    </div>
+    <!-- Download Notes button (visible only on the initial/login screen) -->
+    <button id="notesBtn" aria-label="Download Notes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Download Notes</span>
+    </button>
 
     <script>
         (function() {
@@ -376,6 +374,7 @@
             const MESSAGE_INTERVAL = 1200;          // ms between status changes
             const IFRAME_TIMEOUT = 15000;           // ms before showing retry
             const FADE_DURATION = 600;              // must match CSS transition
+            const NOTES_URL = "https://hjkhan015-star.github.io/NotesNSQF/index.html";
 
             // Modern status message pairs
             const STATUS_PAIRS = [
@@ -393,6 +392,7 @@
             const progressPercent = document.getElementById('progressPercent');
             const retryBtn = document.getElementById('retryBtn');
             const iframe = document.getElementById('appFrame');
+            const notesBtn = document.getElementById('notesBtn');
 
             // ---------- State ----------
             let iframeLoaded = false;
@@ -520,27 +520,22 @@
                         setTimeout(() => {
                             overlay.style.display = 'none';
                         }, FADE_DURATION);
+
+                        // The loading screen is the only stage we can reliably tell apart
+                        // from "inside the app" (the app itself lives in a cross-origin
+                        // iframe, so we can't inspect its own login state). Once the app
+                        // has taken over, retire the Download Notes button.
+                        notesBtn.classList.add('hidden');
                     }, 250); // small pause for readability
                 }
             }
 
-            // ---------- Notes Hub button/overlay ----------
-            (function initNotesHub() {
-                const NOTES_URL = "https://hjkhan015-star.github.io/NotesNSQF/index.html";
-                const notesBtn = document.getElementById('notesBtn');
-                const notesOverlay = document.getElementById('notesOverlay');
-                const notesCloseBtn = document.getElementById('notesCloseBtn');
-                const notesFrame = document.getElementById('notesFrame');
-
-                notesBtn.addEventListener('click', () => {
-                    if (!notesFrame.src) notesFrame.src = NOTES_URL; // lazy-load first time only
-                    notesOverlay.classList.add('open');
-                });
-
-                notesCloseBtn.addEventListener('click', () => {
-                    notesOverlay.classList.remove('open');
-                });
-            })();
+            // ---------- Download Notes button ----------
+            // Opens in a real browser tab (not an in-app iframe) so the device's
+            // normal download flow works properly.
+            notesBtn.addEventListener('click', () => {
+                window.open(NOTES_URL, '_blank', 'noopener');
+            });
 
             // ---------- Service worker (preserved) ----------
             if ('serviceWorker' in navigator) {
