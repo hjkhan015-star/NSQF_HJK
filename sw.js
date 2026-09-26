@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nsqf-planner-shell-v4.2';
+const CACHE_NAME = 'nsqf-planner-shell-v7.0';
 const ASSETS = [
   './',
   './index.html',
