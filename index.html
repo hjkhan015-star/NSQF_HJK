@@ -271,7 +271,7 @@
             }
         }
 
-        /* ========== DOWNLOAD NOTES BUTTON (floating, always visible) ========== */
+        /* ========== DOWNLOAD NOTES BUTTON (visible only during loading) ========== */
         #notesBtn {
             position: fixed;
             /* sits just above the app's bottom nav bar; safe-area aware */
@@ -295,7 +295,8 @@
             letter-spacing: 0.2px;
             box-shadow: 0 4px 16px rgba(15, 36, 64, 0.14);
             cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.3s ease;
+            transition: transform 0.15s ease, box-shadow 0.15s ease,
+                        opacity 0.35s ease, visibility 0.35s ease;
         }
 
         #notesBtn svg {
@@ -313,9 +314,13 @@
             transform: translateX(-50%) scale(0.97);
         }
 
-        /* Reserved for future use — kept for compatibility with existing JS */
+        /* Once the app is handed off (post-loading), the button is hidden
+           permanently for the lifetime of this page. visibility:hidden is
+           important — plain opacity alone still leaves it hit-testable on
+           some mobile browsers. */
         #notesBtn.hidden {
             opacity: 0;
+            visibility: hidden;
             pointer-events: none;
         }
 
@@ -434,7 +439,8 @@
         title="NSQF Planner Application"
     ></iframe>
 
-    <!-- Download Notes button (floating, always visible) -->
+    <!-- Download Notes button — visible during the loading / pre-app phase only.
+         Hidden automatically once the loading overlay fades out. -->
     <button id="notesBtn" aria-label="Download Notes">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -598,16 +604,18 @@
                             overlay.style.display = 'none';
                         }, FADE_DURATION);
 
-                        // NOTE: The Download Notes button is intentionally NOT hidden
-                        // here anymore — it floats above the app's bottom nav and stays
-                        // available on every screen (login, launcher, modules).
+                        // Handing off to the app (login + modules) — hide the
+                        // Notes button. It's only meant to be reachable from
+                        // this wrapper during the connection/loading phase.
+                        notesBtn.classList.add('hidden');
                     }, 250);
                 }
             }
 
             // ---------- Download Notes button ----------
             // Opens in a real browser tab (not an in-app iframe) so the device's
-            // normal download flow works properly.
+            // normal download flow works properly. The button is hidden by
+            // checkReady() as soon as the loading overlay fades out.
             notesBtn.addEventListener('click', () => {
                 window.open(NOTES_URL, '_blank', 'noopener');
             });
